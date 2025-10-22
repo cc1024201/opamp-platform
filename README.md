@@ -344,6 +344,28 @@ go build -o agent-test .
    - 易于测试和扩展
    - 符合 Go 最佳实践
 
+## 📚 文档
+
+### 核心文档
+
+- **[README.md](README.md)** - 项目主页、快速开始、API 文档
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - 开发指南、架构设计、技术决策、常见问题
+- **[TESTING.md](TESTING.md)** - 测试指南、覆盖率状态、如何运行测试
+
+### 快速导航
+
+**🆕 新开发者入门**:
+1. 阅读 [README.md](README.md) 了解项目概况
+2. 阅读 [DEVELOPMENT.md](DEVELOPMENT.md) 了解架构和技术决策
+3. 阅读 [TESTING.md](TESTING.md) 了解测试策略
+
+**🔧 继续开发**:
+1. 查看 [TESTING.md](TESTING.md) 了解当前测试状态（73.6% 覆盖率）
+2. 查看 [DEVELOPMENT.md](DEVELOPMENT.md) 的常见问题部分
+
+**🐛 问题排查**:
+1. 查看 [DEVELOPMENT.md](DEVELOPMENT.md) 的常见问题和解决方案部分
+
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request!
