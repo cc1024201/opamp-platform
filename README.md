@@ -1,5 +1,9 @@
 # OpAMP Platform
 
+[![Tests](https://github.com/cc1024201/opamp-platform/actions/workflows/test.yml/badge.svg)](https://github.com/cc1024201/opamp-platform/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cc1024201/opamp-platform)](https://goreportcard.com/report/github.com/cc1024201/opamp-platform)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 一个基于 [OpenTelemetry OpAMP](https://github.com/open-telemetry/opamp-spec) 协议的现代化Agent管理平台。
 
 ## 🎯 项目特性
