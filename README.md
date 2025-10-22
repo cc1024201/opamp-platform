@@ -10,6 +10,8 @@
 ## 🎯 项目特性
 
 - ✅ **最新技术栈**: 基于 opamp-go v0.22.0, Go 1.24, PostgreSQL 16
+- ✅ **高测试覆盖率**: 73.6% 代码覆盖率，45个单元测试全部通过
+- ✅ **CI/CD 自动化**: GitHub Actions + Codecov 持续集成
 - ✅ **稳定可靠**: 使用企业级数据库和缓存方案
 - ✅ **易于扩展**: 清晰的架构设计，模块化开发
 - ✅ **生产就绪**: 完整的日志、监控、健康检查
@@ -224,6 +226,30 @@ Configuration 定义了 Agent 的遥测配置：
 
 ## 🧪 测试
 
+### 单元测试
+
+```bash
+cd backend
+
+# 运行所有测试
+go test ./internal/... -v
+
+# 运行测试并生成覆盖率报告
+go test ./internal/... -v -cover -coverprofile=coverage.out
+
+# 查看详细覆盖率
+go tool cover -html=coverage.out
+```
+
+**测试统计** (2025-10-22):
+- ✅ **45个单元测试** - 全部通过
+- ✅ **73.6% 总体覆盖率**
+  - OpAMP 层: 82.4% (23个测试)
+  - Store 层: 70.7% (9个测试)
+  - Model 层: 41.4% (13个测试)
+
+详细测试报告: [TEST_SUMMARY.md](backend/TEST_SUMMARY.md)
+
 ### 模拟 Agent 连接
 
 使用 opamp-go 提供的示例 Agent:
@@ -239,16 +265,26 @@ go build -o agent-test .
 ./agent-test -initial-insecure-connection
 ```
 
-**测试结果**: ✅ 已验证
+**集成测试结果**: ✅ 已验证
 - Agent 连接成功
 - 自动注册到数据库
 - 配置自动分发成功
 
 详细测试报告: [TESTING_REPORT_v1.md](docs/TESTING_REPORT_v1.md)
 
+### CI/CD
+
+项目配置了 GitHub Actions 自动化测试：
+- ✅ 每次 push 和 PR 自动运行测试
+- ✅ 代码质量检查 (golangci-lint)
+- ✅ 覆盖率自动上传到 Codecov
+- ✅ 构建验证
+
+查看 CI 状态: [GitHub Actions](.github/workflows/test.yml)
+
 ## 🗺️ Roadmap
 
-### ✅ Phase 1: 基础架构 (已完成)
+### ✅ Phase 1: 基础架构 (已完成 - 2025-10-22)
 - [x] 项目初始化
 - [x] Docker Compose 开发环境
 - [x] OpAMP Server 集成
@@ -259,20 +295,30 @@ go build -o agent-test .
 - [x] 配置分发流程验证
 - [x] 完整测试报告
 
-### 🚧 Phase 2: 核心功能 (计划中)
-- [ ] 前端 UI 初始化
+### ✅ Phase 2: 测试和质量保障 (已完成 - 2025-10-22)
+- [x] 数据模型单元测试 (13个测试)
+- [x] Store 层单元测试 (9个测试)
+- [x] OpAMP 层单元测试 (23个测试)
+- [x] GitHub Actions CI/CD 配置
+- [x] Codecov 集成
+- [x] golangci-lint 代码质量检查
+- [x] 达到 73.6% 测试覆盖率
+- [x] 文档完善 (测试报告、开发总结)
+
+### 🚧 Phase 3: 前端开发 (进行中)
+- [ ] 前端项目初始化 (React + TypeScript + Vite)
 - [ ] Agent 列表和详情页面
 - [ ] Configuration 管理界面
-- [ ] 实时状态更新
+- [ ] 实时状态更新 (WebSocket)
 
-### 📋 Phase 3: 高级功能 (计划中)
+### 📋 Phase 4: 高级功能 (计划中)
 - [ ] GraphQL API
 - [ ] WebSocket 实时通知
 - [ ] Dashboard 仪表盘
 - [ ] 告警系统
 - [ ] 用户认证和权限
 
-### 🎯 Phase 4: 生产就绪 (计划中)
+### 🎯 Phase 5: 生产就绪 (计划中)
 - [ ] 高可用部署
 - [ ] Kubernetes Operator
 - [ ] 监控和日志收集
@@ -308,6 +354,27 @@ Apache License 2.0
 
 ---
 
-**当前状态**: 🚧 开发中 - MVP 阶段
+## 📊 项目统计
 
-**最后更新**: 2025-10-22
+| 指标 | 数值 |
+|------|------|
+| 代码行数 | ~5,300 行 |
+| 测试数量 | 45 个 |
+| 测试覆盖率 | 73.6% |
+| Go 模块数 | 3 个 (model, store, opamp) |
+| API 端点数 | 8 个 |
+| 文档页数 | 6 份 |
+
+## 🏆 里程碑
+
+- ✅ **2025-10-22**: Phase 2 完成 - 测试覆盖率达到 73.6%
+- ✅ **2025-10-22**: CI/CD 集成完成
+- ✅ **2025-10-22**: Phase 1 完成 - MVP 功能验证
+
+---
+
+**当前状态**: ✅ MVP 完成 + 高质量测试覆盖
+
+**开发进度**: Phase 2 已完成，准备进入 Phase 3 (前端开发)
+
+**最后更新**: 2025-10-22 20:52
