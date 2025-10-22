@@ -1,6 +1,7 @@
 # OpAMP Platform
 
 [![Tests](https://github.com/cc1024201/opamp-platform/actions/workflows/test.yml/badge.svg)](https://github.com/cc1024201/opamp-platform/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/cc1024201/opamp-platform/branch/main/graph/badge.svg)](https://codecov.io/gh/cc1024201/opamp-platform)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cc1024201/opamp-platform)](https://goreportcard.com/report/github.com/cc1024201/opamp-platform)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
