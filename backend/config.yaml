@@ -1,0 +1,53 @@
+# OpAMP Platform 配置文件
+
+server:
+  # HTTP 服务端口
+  port: 8080
+  # 服务模式: debug, release
+  mode: debug
+
+opamp:
+  # OpAMP 服务端点
+  endpoint: /v1/opamp
+  # 心跳间隔 (秒)
+  heartbeat_interval: 30
+  # Secret Key 验证 (为空则不验证)
+  secret_key: ""
+
+database:
+  # PostgreSQL 连接配置
+  host: localhost
+  port: 5432
+  user: opamp
+  password: opamp123
+  dbname: opamp_platform
+  # 连接池配置
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 300  # 秒
+
+redis:
+  # Redis 连接配置
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  # 连接池配置
+  pool_size: 10
+
+minio:
+  # MinIO 对象存储配置
+  endpoint: localhost:9000
+  access_key: minioadmin
+  secret_key: minioadmin123
+  use_ssl: false
+  # Agent 包存储桶
+  bucket: agent-packages
+
+logging:
+  # 日志级别: debug, info, warn, error
+  level: info
+  # 日志格式: json, console
+  format: console
+  # 日志输出路径
+  output: stdout
