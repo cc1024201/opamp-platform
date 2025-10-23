@@ -55,25 +55,27 @@
    - ❌ API Rate Limiting
    - ❌ 备份和恢复机制
 
-#### 前端缺失功能
+#### 前端功能进展 (更新于 2025-10-23)
 1. **核心交互**
-   - ❌ Agent 详情页面
-   - ❌ Configuration 编辑页面
-   - ❌ YAML 配置编辑器
-   - ❌ 实时状态更新 (WebSocket)
-   - ❌ 配置向导 (Wizard)
+   - ✅ Agent 详情页面 (基础版本完成)
+   - ✅ Configuration 编辑页面 (Monaco Editor 集成)
+   - ✅ YAML 配置编辑器
+   - ❌ 实时状态更新 (WebSocket) - 待实现
+   - ❌ 配置向导 (Wizard) - 待实现
 
 2. **数据可视化**
-   - ❌ Agent 状态图表
-   - ❌ 性能监控面板
-   - ❌ 配置分发进度
-   - ❌ 实时日志查看
+   - ✅ Agent 状态分布饼图 (仪表盘)
+   - ✅ 系统活动概览
+   - ❌ 性能监控面板 - 待实现
+   - ❌ 配置分发进度图表 - 待实现
+   - ❌ 实时日志查看 - 待实现
 
 3. **用户体验**
-   - ❌ 批量操作
-   - ❌ 搜索和过滤
-   - ❌ 导入导出功能
-   - ❌ 错误提示和验证
+   - ✅ Agent 列表搜索和过滤 (名称、主机名、ID、状态)
+   - ✅ Agent 详情操作按钮 (刷新、删除、复制ID)
+   - ✅ Configuration 历史版本查看
+   - ❌ 批量操作 - 待实现
+   - ❌ 导入导出功能 - 待实现
 
 ---
 
@@ -130,18 +132,44 @@
 - [ ] 集成测试: Agent 连接、配置下发、包更新全流程
 - [ ] 压力测试: 1000+ Agents 并发连接
 
-#### 最近更新 (2025-10-23)
-- ✅ **Phase 4.3 全部完成**: Agent 状态管理增强
+#### 最近更新
+
+**2025-10-23 晚间 - Phase 4.2 前端核心页面部分完成**
+- ✅ **仪表盘增强**:
+  - 添加 Agent 状态分布饼图 (使用 Recharts)
+  - 添加系统活动概览面板 (在线率、配置统计)
+  - 改进空数据处理和加载状态
+
+- ✅ **Agent 管理增强**:
+  - Agent 列表搜索和过滤 (名称、主机名、ID、状态)
+  - Agent 详情页操作按钮 (刷新、删除、复制ID)
+  - 删除确认对话框和错误处理
+
+- ✅ **Configuration 管理增强**:
+  - 配置历史版本查看功能
+  - 历史版本对话框 (显示版本号、Hash、创建时间)
+  - 从历史版本查看配置内容
+  - 添加历史图标按钮
+
+- ✅ **前端类型系统完善**:
+  - 添加 ConfigurationHistory 类型定义
+  - 添加 ConfigurationApplyHistory 类型定义
+  - 改进 TypeScript 类型安全
+
+**2025-10-23 - Phase 4.3 全部完成**
+- ✅ **Agent 状态管理增强**:
   - 数据库迁移 (000004_add_agent_status_tracking)
   - 心跳监控器实现
   - 连接历史记录
   - OpAMP 回调集成
   - **新增状态查询 API** (5个新接口)
   - **新增 Prometheus Metrics** (6个新指标)
+
 - ✅ **测试覆盖率提升**:
   - 添加 packagemgr 模块完整单元测试 (93.5% 覆盖率)
   - 添加 storage 模块测试框架 (16.7% 覆盖率)
   - 总体测试覆盖率: 54.2%
+
 - ✅ 重构 packagemgr 使用接口抽象 (提高可测试性)
 - ✅ 所有 internal 模块测试通过
 
@@ -150,26 +178,27 @@
 ### 4.2 前端核心页面完善 ⭐⭐⭐
 
 #### Agent 管理模块
-- [ ] **Agent 详情页面** (`pages/agents/AgentDetailPage.tsx`)
-  - 显示 Agent 完整信息 (ID, 版本, 标签, 状态)
-  - 实时状态更新 (WebSocket)
-  - 配置应用历史
-  - 性能指标图表
-  - 操作: 重启、删除、更新配置
+- [x] **Agent 详情页面** (`pages/agents/AgentDetailPage.tsx`) ✅ **部分完成 (2025-10-23)**
+  - ✅ 显示 Agent 完整信息 (ID, 版本, 标签, 状态)
+  - ✅ 操作按钮: 刷新、删除、复制 ID
+  - ❌ 实时状态更新 (WebSocket) - 待实现
+  - ❌ 配置应用历史 - 待实现
+  - ❌ 性能指标图表 - 待实现
 
-- [ ] **Agent 列表增强** (`pages/agents/AgentListPage.tsx`)
-  - 搜索和过滤 (按名称、状态、标签)
-  - 批量操作 (删除、更新配置)
-  - 分页和排序
-  - 状态统计卡片
+- [x] **Agent 列表增强** (`pages/agents/AgentListPage.tsx`) ✅ **已完成 (2025-10-23)**
+  - ✅ 搜索和过滤 (按名称、主机名、ID、状态)
+  - ✅ 分页和排序
+  - ✅ 状态统计
+  - ❌ 批量操作 (删除、更新配置) - 待实现
 
 #### Configuration 管理模块
-- [ ] **Configuration 编辑页面** (`pages/configurations/ConfigurationEditPage.tsx`)
-  - YAML 编辑器集成 (Monaco Editor)
-  - 语法高亮和验证
-  - 保存和应用配置
-  - 预览配置效果
-  - 版本历史查看
+- [x] **Configuration 编辑页面** (`pages/configurations/ConfigurationListPage.tsx`) ✅ **已完成 (2025-10-23)**
+  - ✅ YAML/JSON 编辑器集成 (Monaco Editor)
+  - ✅ 语法高亮
+  - ✅ 保存和应用配置
+  - ✅ 版本历史查看
+  - ✅ 标签选择器
+  - ❌ 配置向导 - 待实现
 
 - [ ] **Configuration 创建向导** (`components/wizard/ConfigurationWizard.tsx`)
   - 多步骤表单
@@ -178,11 +207,13 @@
   - 验证和预览
 
 #### 仪表盘增强
-- [ ] **实时监控面板** (`pages/dashboard/DashboardPage.tsx`)
-  - Agent 状态分布图 (饼图)
-  - 配置分发状态 (柱状图)
-  - 最近活动时间线
-  - 关键指标卡片 (在线数、配置数、告警数)
+- [x] **实时监控面板** (`pages/dashboard/DashboardPage.tsx`) ✅ **部分完成 (2025-10-23)**
+  - ✅ Agent 状态分布图 (饼图)
+  - ✅ 系统活动概览卡片 (在线率、配置数等)
+  - ✅ 最近连接的 Agents 列表
+  - ✅ 最近更新的配置列表
+  - ❌ 配置分发状态 (柱状图) - 待实现
+  - ❌ 活动时间线 - 待实现
 
 #### 参考实现
 - BindPlane OP: `/ui/src/pages/agents/agent.tsx` (Agent 详情)
@@ -551,20 +582,23 @@
 
 ## 🔄 迭代计划
 
-### v0.2.0 (Phase 4 核心完成) - 当前版本 ✅
+### v0.2.0 (Phase 4.1-4.3 完成) - 当前版本 ✅
 - ✅ OpAMP 协议完善 (包管理、热更新)
 - ✅ Agent 状态管理增强
 - ✅ 配置版本控制
+- ✅ 后端核心 API 完善
 
-### v0.3.0 (Phase 4 完成 + Phase 5 开始) - 1-2 个月内
-- 前端核心页面 (Agent 详情、Configuration 编辑)
-- WebSocket 实时通信基础
-- 审计日志基础
+### v0.3.0 (Phase 4.2 部分完成) - 进行中 🚧
+- ✅ 前端核心页面增强 (仪表盘图表、Agent 列表搜索、配置历史)
+- ⏳ 前端剩余功能 (WebSocket、批量操作、配置向导)
+- ⏳ WebSocket 实时通信基础 - 计划中
+- ⏳ 审计日志基础 - 计划中
 
-### v0.4.0 (Phase 5 完成) - 3-4 个月内
+### v0.4.0 (Phase 5 完成) - 2-3 个月内
 - Agent 分组和标签
 - 批量操作和导入导出
 - 基础告警系统
+- WebSocket 实时通信完成
 
 ### v0.5.0 (Phase 6-7 完成) - 5-6 个月内
 - 配置模板系统

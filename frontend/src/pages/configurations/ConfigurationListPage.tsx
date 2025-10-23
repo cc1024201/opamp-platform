@@ -23,17 +23,21 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  CircularProgress,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   Add as AddIcon,
+  History as HistoryIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
 import Editor from '@monaco-editor/react';
 import { useConfigurationStore } from '@/stores/configurationStore';
-import { CreateConfigurationRequest, UpdateConfigurationRequest } from '@/types/api';
+import { CreateConfigurationRequest, UpdateConfigurationRequest, ConfigurationHistory } from '@/types/api';
 import { format } from 'date-fns';
+import axios from 'axios';
 
 export default function ConfigurationListPage() {
   const {
@@ -50,7 +54,10 @@ export default function ConfigurationListPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedConfigName, setSelectedConfigName] = useState<string | null>(null);
+  const [configHistories, setConfigHistories] = useState<ConfigurationHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // 表单状态
   const [formData, setFormData] = useState({
@@ -154,6 +161,28 @@ export default function ConfigurationListPage() {
     const newSelector = { ...formData.selector };
     delete newSelector[key];
     setFormData({ ...formData, selector: newSelector });
+  };
+
+  const handleViewHistory = async (name: string) => {
+    setSelectedConfigName(name);
+    setHistoryDialogOpen(true);
+    setLoadingHistory(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:8080/api/v1/configurations/${name}/history`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { limit: 50, offset: 0 },
+        }
+      );
+      setConfigHistories(response.data.histories || []);
+    } catch (err) {
+      console.error('Failed to fetch history:', err);
+      setConfigHistories([]);
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   const ConfigDialog = ({
@@ -345,6 +374,11 @@ export default function ConfigurationListPage() {
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    <Tooltip title="查看历史">
+                      <IconButton size="small" onClick={() => handleViewHistory(config.name)}>
+                        <HistoryIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="删除">
                       <IconButton
                         size="small"
@@ -391,6 +425,80 @@ export default function ConfigurationListPage() {
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
             删除
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 历史版本对话框 */}
+      <Dialog
+        open={historyDialogOpen}
+        onClose={() => setHistoryDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          配置历史版本 - {selectedConfigName}
+        </DialogTitle>
+        <DialogContent>
+          {loadingHistory ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : configHistories.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+              暂无历史版本
+            </Typography>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>版本</TableCell>
+                  <TableCell>配置 Hash</TableCell>
+                  <TableCell>创建时间</TableCell>
+                  <TableCell>操作</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {configHistories.map((history) => (
+                  <TableRow key={history.id} hover>
+                    <TableCell>
+                      <Chip label={`v${history.version}`} size="small" color="primary" />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                        {history.config_hash.substring(0, 12)}...
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(history.created_at), 'yyyy-MM-dd HH:mm:ss')}
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="查看配置">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setFormData({
+                              name: history.configuration_name,
+                              display_name: '',
+                              content_type: history.content_type,
+                              raw_config: history.raw_config,
+                              selector: history.selector || {},
+                            });
+                            setHistoryDialogOpen(false);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <ViewIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistoryDialogOpen(false)}>关闭</Button>
         </DialogActions>
       </Dialog>
     </Box>

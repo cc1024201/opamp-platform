@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -11,21 +11,59 @@ import {
   Divider,
   Alert,
   CircularProgress,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
-import { ArrowBack as BackIcon } from '@mui/icons-material';
+import {
+  ArrowBack as BackIcon,
+  Refresh as RefreshIcon,
+  Delete as DeleteIcon,
+  ContentCopy as CopyIcon,
+} from '@mui/icons-material';
 import { useAgentStore } from '@/stores/agentStore';
 import { format } from 'date-fns';
 
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { selectedAgent, isLoading, error, fetchAgent, clearError } = useAgentStore();
+  const { selectedAgent, isLoading, error, fetchAgent, deleteAgent, clearError } = useAgentStore();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchAgent(id);
     }
   }, [id, fetchAgent]);
+
+  const handleRefresh = () => {
+    if (id) {
+      fetchAgent(id);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (id) {
+      try {
+        await deleteAgent(id);
+        navigate('/agents');
+      } catch (err) {
+        // 错误已在 store 中处理
+      }
+    }
+  };
+
+  const handleCopyId = () => {
+    if (selectedAgent) {
+      navigator.clipboard.writeText(selectedAgent.id);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -84,9 +122,29 @@ export default function AgentDetailPage() {
 
   return (
     <Box>
-      <Button startIcon={<BackIcon />} onClick={() => navigate('/agents')} sx={{ mb: 2 }}>
-        返回列表
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Button startIcon={<BackIcon />} onClick={() => navigate('/agents')}>
+          返回列表
+        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="刷新">
+            <IconButton onClick={handleRefresh} disabled={isLoading}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="删除 Agent">
+            <IconButton onClick={() => setDeleteDialogOpen(true)} color="error">
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+
+      {copySuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Agent ID 已复制到剪贴板
+        </Alert>
+      )}
 
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -106,12 +164,19 @@ export default function AgentDetailPage() {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Agent ID
-                  </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Agent ID
+                    </Typography>
+                    <Tooltip title={copySuccess ? '已复制!' : '复制 ID'}>
+                      <IconButton size="small" onClick={handleCopyId}>
+                        <CopyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                   <Typography
                     variant="body2"
-                    sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}
+                    sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mt: 0.5 }}
                   >
                     {selectedAgent.id}
                   </Typography>
@@ -225,6 +290,25 @@ export default function AgentDetailPage() {
           )}
         </Box>
       </Paper>
+
+      {/* 删除确认对话框 */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>确认删除</DialogTitle>
+        <DialogContent>
+          <Typography>
+            确定要删除 Agent <strong>{selectedAgent.name || selectedAgent.id.substring(0, 8)}</strong> 吗?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            此操作不可撤销,所有相关数据将被永久删除。
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>取消</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            删除
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

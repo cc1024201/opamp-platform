@@ -108,3 +108,44 @@ export interface PaginationParams {
   page?: number;
   page_size?: number;
 }
+
+// 配置历史相关类型
+export interface ConfigurationHistory {
+  id: number;
+  configuration_name: string;
+  version: number;
+  content_type: 'yaml' | 'json';
+  raw_config: string;
+  config_hash: string;
+  selector?: Record<string, string>;
+  change_description?: string;
+  created_by?: string;
+  created_at: string;
+}
+
+export interface ConfigurationHistoryListResponse {
+  histories: ConfigurationHistory[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// 配置应用历史类型
+export interface ConfigurationApplyHistory {
+  id: number;
+  agent_id: string;
+  configuration_name: string;
+  version: number;
+  config_hash: string;
+  status: 'pending' | 'applying' | 'applied' | 'failed';
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApplyHistoryListResponse {
+  histories: ConfigurationApplyHistory[];
+  total: number;
+  limit: number;
+  offset: number;
+}

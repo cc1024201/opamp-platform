@@ -20,11 +20,19 @@ import {
   Button,
   Alert,
   Tooltip,
+  TextField,
+  InputAdornment,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useAgentStore } from '@/stores/agentStore';
 import { format } from 'date-fns';
@@ -35,6 +43,10 @@ export default function AgentListPage() {
     useAgentStore();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+
+  // 搜索和过滤状态
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchAgents(page, pageSize);
@@ -95,6 +107,29 @@ export default function AgentListPage() {
     }
   };
 
+  // 过滤 agents
+  const filteredAgents = agents.filter((agent) => {
+    // 状态过滤
+    if (statusFilter !== 'all' && agent.status !== statusFilter) {
+      return false;
+    }
+    // 搜索过滤 (名称、主机名、ID)
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      return (
+        agent.id.toLowerCase().includes(term) ||
+        (agent.name && agent.name.toLowerCase().includes(term)) ||
+        agent.hostname.toLowerCase().includes(term)
+      );
+    }
+    return true;
+  });
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -112,6 +147,51 @@ export default function AgentListPage() {
         </Alert>
       )}
 
+      {/* 搜索和过滤区域 */}
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="搜索 Agent (名称、主机名、ID)"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ flex: '1 1 300px', minWidth: 200 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>状态过滤</InputLabel>
+            <Select
+              value={statusFilter}
+              label="状态过滤"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="all">全部状态</MenuItem>
+              <MenuItem value="connected">在线</MenuItem>
+              <MenuItem value="disconnected">离线</MenuItem>
+              <MenuItem value="configuring">配置中</MenuItem>
+              <MenuItem value="error">错误</MenuItem>
+            </Select>
+          </FormControl>
+          {(searchTerm || statusFilter !== 'all') && (
+            <Tooltip title="清除过滤">
+              <IconButton onClick={handleClearSearch} size="small">
+                <ClearIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Box sx={{ flex: 1 }} />
+          <Typography variant="body2" color="text.secondary">
+            显示 {filteredAgents.length} / {agents.length} 个 Agent
+          </Typography>
+        </Box>
+      </Paper>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -128,16 +208,16 @@ export default function AgentListPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {agents.length === 0 && !isLoading ? (
+            {filteredAgents.length === 0 && !isLoading ? (
               <TableRow>
                 <TableCell colSpan={9} align="center">
                   <Typography variant="body2" color="text.secondary">
-                    暂无 Agent 数据
+                    {searchTerm || statusFilter !== 'all' ? '没有符合条件的 Agent' : '暂无 Agent 数据'}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              agents.map((agent) => (
+              filteredAgents.map((agent) => (
                 <TableRow key={agent.id} hover>
                   <TableCell>
                     <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
