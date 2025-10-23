@@ -84,6 +84,7 @@ testdata/
 # Build artifacts
 /backend/opamp-platform
 /backend/opamp-server
+/backend/server
 /backend/docs/docs.go
 /backend/docs/swagger.json
 /backend/docs/swagger.yaml
