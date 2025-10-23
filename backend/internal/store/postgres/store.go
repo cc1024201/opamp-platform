@@ -71,6 +71,10 @@ func (s *Store) migrate() error {
 		&model.Source{},
 		&model.Destination{},
 		&model.Processor{},
+		&model.User{},
+		&model.Package{},
+		&model.ConfigurationHistory{},
+		&model.ConfigurationApplyHistory{},
 	)
 }
 
@@ -182,9 +186,48 @@ func (s *Store) CreateConfiguration(ctx context.Context, config *model.Configura
 
 // UpdateConfiguration 更新配置
 func (s *Store) UpdateConfiguration(ctx context.Context, config *model.Configuration) error {
-	config.UpdateHash()
-	result := s.db.WithContext(ctx).Save(config)
-	return result.Error
+	// 在事务中执行
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 获取当前配置
+		var existing model.Configuration
+		if err := tx.Where("name = ?", config.Name).First(&existing).Error; err != nil {
+			return err
+		}
+
+		// 更新配置哈希
+		config.UpdateHash()
+
+		// 如果配置内容发生变化,创建历史记录并递增版本号
+		if existing.ConfigHash != config.ConfigHash {
+			// 保存当前版本到历史记录
+			history := &model.ConfigurationHistory{
+				ConfigurationName: existing.Name,
+				Version:           existing.Version,
+				ContentType:       existing.ContentType,
+				RawConfig:         existing.RawConfig,
+				ConfigHash:        existing.ConfigHash,
+				Selector:          existing.Selector,
+				Platform:          existing.Platform,
+				CreatedAt:         existing.UpdatedAt,
+			}
+			if err := tx.Create(history).Error; err != nil {
+				return err
+			}
+
+			// 递增版本号
+			config.Version = existing.Version + 1
+		} else {
+			// 配置内容未变化,保持版本号
+			config.Version = existing.Version
+		}
+
+		// 保存更新后的配置
+		if err := tx.Save(config).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // GetConfigurationByName 根据名称获取配置
@@ -214,4 +257,76 @@ func (s *Store) ListConfigurations(ctx context.Context) ([]*model.Configuration,
 func (s *Store) DeleteConfiguration(ctx context.Context, name string) error {
 	result := s.db.WithContext(ctx).Delete(&model.Configuration{}, "name = ?", name)
 	return result.Error
+}
+
+// CreateUser 创建用户
+func (s *Store) CreateUser(ctx context.Context, user *model.User) error {
+	result := s.db.WithContext(ctx).Create(user)
+	return result.Error
+}
+
+// GetUserByUsername 根据用户名获取用户
+func (s *Store) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
+	var user model.User
+	result := s.db.WithContext(ctx).Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+// GetUserByEmail 根据邮箱获取用户
+func (s *Store) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	var user model.User
+	result := s.db.WithContext(ctx).Where("email = ?", email).First(&user)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+// GetUserByID 根据 ID 获取用户
+func (s *Store) GetUserByID(ctx context.Context, id uint) (*model.User, error) {
+	var user model.User
+	result := s.db.WithContext(ctx).Where("id = ?", id).First(&user)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+// UpdateUser 更新用户
+func (s *Store) UpdateUser(ctx context.Context, user *model.User) error {
+	result := s.db.WithContext(ctx).Save(user)
+	return result.Error
+}
+
+// ListUsers 列出所有用户
+func (s *Store) ListUsers(ctx context.Context) ([]*model.User, error) {
+	var users []*model.User
+	result := s.db.WithContext(ctx).Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return users, nil
+}
+
+// DeleteUser 删除用户
+func (s *Store) DeleteUser(ctx context.Context, id uint) error {
+	result := s.db.WithContext(ctx).Delete(&model.User{}, id)
+	return result.Error
+}
+
+// GetDB 获取数据库连接（用于健康检查）
+func (s *Store) GetDB() *gorm.DB {
+	return s.db
 }

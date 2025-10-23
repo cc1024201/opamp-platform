@@ -10,12 +10,40 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
 	"go.uber.org/zap"
 
+	"github.com/cc1024201/opamp-platform/internal/auth"
+	"github.com/cc1024201/opamp-platform/internal/metrics"
 	"github.com/cc1024201/opamp-platform/internal/opamp"
+	"github.com/cc1024201/opamp-platform/internal/packagemgr"
+	"github.com/cc1024201/opamp-platform/internal/storage"
 	"github.com/cc1024201/opamp-platform/internal/store/postgres"
+	_ "github.com/cc1024201/opamp-platform/docs" // Swagger 文档
 )
+
+// @title           OpAMP Platform API
+// @version         1.1.0
+// @description     基于 OpenTelemetry OpAMP 协议的 Agent 管理平台
+// @termsOfService  https://github.com/cc1024201/opamp-platform
+
+// @contact.name   API Support
+// @contact.url    https://github.com/cc1024201/opamp-platform/issues
+// @contact.email  admin@opamp.local
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	// 初始化日志
@@ -68,40 +96,108 @@ func main() {
 		logger.Fatal("Failed to start OpAMP server", zap.Error(err))
 	}
 
+	// 创建 JWT 管理器
+	jwtSecretKey := viper.GetString("jwt.secret_key")
+	if jwtSecretKey == "" {
+		jwtSecretKey = "default-secret-key-change-in-production" // 默认密钥，生产环境必须修改
+		logger.Warn("JWT secret key not configured, using default key. Please set jwt.secret_key in config")
+	}
+	jwtDuration := viper.GetDuration("jwt.duration")
+	if jwtDuration == 0 {
+		jwtDuration = 24 * time.Hour // 默认 24 小时
+	}
+	jwtManager := auth.NewJWTManager(jwtSecretKey, jwtDuration)
+
+	// 初始化 MinIO 客户端
+	minioConfig := storage.Config{
+		Endpoint:  viper.GetString("minio.endpoint"),
+		AccessKey: viper.GetString("minio.access_key"),
+		SecretKey: viper.GetString("minio.secret_key"),
+		Bucket:    viper.GetString("minio.bucket"),
+		UseSSL:    viper.GetBool("minio.use_ssl"),
+	}
+	minioClient, err := storage.NewMinIOClient(minioConfig, logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize MinIO client", zap.Error(err))
+	}
+
+	// 初始化 Package Manager
+	packageManager := packagemgr.NewManager(store, minioClient, logger)
+
+	// 初始化 Metrics
+	appMetrics := metrics.NewMetrics("opamp_platform")
+
 	// 创建 HTTP 服务器
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(corsMiddleware())
 	router.Use(loggingMiddleware(logger))
+	router.Use(metrics.PrometheusMiddleware(appMetrics))
 
-	// 健康检查
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-			"time":   time.Now().Unix(),
-		})
-	})
+	// 健康检查端点
+	router.GET("/health", healthCheckHandler(store.GetDB()))
+	router.GET("/health/ready", readinessHandler(store.GetDB()))
+	router.GET("/health/live", livenessHandler())
+
+	// Prometheus metrics 端点
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// Swagger API 文档
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API 路由组
 	api := router.Group("/api/v1")
 	{
-		// Agent 相关 API
-		agents := api.Group("/agents")
+		// 公开的认证相关 API（不需要 token）
+		authGroup := api.Group("/auth")
 		{
-			agents.GET("", listAgentsHandler(store))
-			agents.GET("/:id", getAgentHandler(store))
-			agents.DELETE("/:id", deleteAgentHandler(store))
+			authGroup.POST("/login", loginHandler(store, jwtManager))
+			authGroup.POST("/register", registerHandler(store, jwtManager))
 		}
 
-		// Configuration 相关 API
-		configs := api.Group("/configurations")
+		// 需要认证的 API
+		authenticated := api.Group("")
+		authenticated.Use(auth.AuthMiddleware(jwtManager))
 		{
-			configs.GET("", listConfigurationsHandler(store))
-			configs.GET("/:name", getConfigurationHandler(store))
-			configs.POST("", createConfigurationHandler(store))
-			configs.PUT("/:name", updateConfigurationHandler(store))
-			configs.DELETE("/:name", deleteConfigurationHandler(store))
+			// 用户信息
+			authenticated.GET("/me", meHandler(store))
+
+			// Agent 相关 API
+			agents := authenticated.Group("/agents")
+			{
+				agents.GET("", listAgentsHandler(store))
+				agents.GET("/:id", getAgentHandler(store))
+				agents.DELETE("/:id", deleteAgentHandler(store))
+				agents.GET("/:id/apply-history", getAgentApplyHistoryHandler(store))
+			}
+
+			// Configuration 相关 API
+			configs := authenticated.Group("/configurations")
+			{
+				configs.GET("", listConfigurationsHandler(store))
+				configs.GET("/:name", getConfigurationHandler(store))
+				configs.POST("", createConfigurationHandler(store))
+				configs.PUT("/:name", updateConfigurationHandler(store))
+				configs.DELETE("/:name", deleteConfigurationHandler(store))
+
+				// 配置热更新相关
+				configs.POST("/:name/push", pushConfigurationHandler(store, opampServer))
+				configs.GET("/:name/history", listConfigurationHistoryHandler(store))
+				configs.GET("/:name/history/:version", getConfigurationHistoryHandler(store))
+				configs.POST("/:name/rollback/:version", rollbackConfigurationHandler(store))
+				configs.GET("/:name/apply-history", listApplyHistoryHandler(store))
+			}
+
+			// Package 相关 API
+			packages := authenticated.Group("/packages")
+			{
+				packages.GET("", listPackagesHandler(packageManager))
+				packages.POST("", uploadPackageHandler(packageManager))
+				packages.GET("/:id", getPackageHandler(packageManager))
+				packages.GET("/:id/download", downloadPackageHandler(packageManager))
+				packages.DELETE("/:id", deletePackageHandler(packageManager))
+			}
 		}
 	}
 

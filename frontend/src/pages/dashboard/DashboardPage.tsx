@@ -1,0 +1,186 @@
+import { useEffect } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Card,
+  CardContent,
+} from '@mui/material';
+import {
+  DevicesOther as AgentsIcon,
+  CheckCircle as ConnectedIcon,
+  Error as DisconnectedIcon,
+  Settings as ConfigIcon,
+} from '@mui/icons-material';
+import { useAgentStore } from '@/stores/agentStore';
+import { useConfigurationStore } from '@/stores/configurationStore';
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: string;
+}
+
+function StatCard({ title, value, icon, color }: StatCardProps) {
+  return (
+    <Card>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              backgroundColor: color,
+              borderRadius: '50%',
+              width: 48,
+              height: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mr: 2,
+            }}
+          >
+            {icon}
+          </Box>
+          <Box>
+            <Typography variant="h4" component="div">
+              {value}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {title}
+            </Typography>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function DashboardPage() {
+  const { agents, total, fetchAgents } = useAgentStore();
+  const { configurations, fetchConfigurations } = useConfigurationStore();
+
+  useEffect(() => {
+    fetchAgents();
+    fetchConfigurations();
+  }, [fetchAgents, fetchConfigurations]);
+
+  const connectedAgents = agents.filter((a) => a.status === 'connected').length;
+  const disconnectedAgents = agents.filter(
+    (a) => a.status === 'disconnected' || a.status === 'error'
+  ).length;
+
+  return (
+    <Box>
+      <Typography variant="h4" gutterBottom>
+        仪表盘
+      </Typography>
+      <Typography variant="body1" color="text.secondary" paragraph>
+        OpAMP Agent 管理平台概览
+      </Typography>
+
+      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 3 }}>
+        <Box sx={{ flex: '1 1 200px', minWidth: 200 }}>
+          <StatCard
+            title="总 Agents"
+            value={total}
+            icon={<AgentsIcon sx={{ color: 'white' }} />}
+            color="#1976d2"
+          />
+        </Box>
+        <Box sx={{ flex: '1 1 200px', minWidth: 200 }}>
+          <StatCard
+            title="在线 Agents"
+            value={connectedAgents}
+            icon={<ConnectedIcon sx={{ color: 'white' }} />}
+            color="#2e7d32"
+          />
+        </Box>
+        <Box sx={{ flex: '1 1 200px', minWidth: 200 }}>
+          <StatCard
+            title="离线 Agents"
+            value={disconnectedAgents}
+            icon={<DisconnectedIcon sx={{ color: 'white' }} />}
+            color="#d32f2f"
+          />
+        </Box>
+        <Box sx={{ flex: '1 1 200px', minWidth: 200 }}>
+          <StatCard
+            title="配置总数"
+            value={configurations.length}
+            icon={<ConfigIcon sx={{ color: 'white' }} />}
+            color="#ed6c02"
+          />
+        </Box>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+        <Box sx={{ flex: '1 1 400px' }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              最近连接的 Agents
+            </Typography>
+            {agents.slice(0, 5).map((agent) => (
+              <Box
+                key={agent.id}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  py: 1,
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">
+                    {agent.name || agent.id.substring(0, 8)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {agent.hostname}
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    backgroundColor:
+                      agent.status === 'connected' ? '#e8f5e9' : '#ffebee',
+                    color:
+                      agent.status === 'connected' ? '#2e7d32' : '#d32f2f',
+                  }}
+                >
+                  {agent.status === 'connected' ? '在线' : '离线'}
+                </Typography>
+              </Box>
+            ))}
+          </Paper>
+        </Box>
+
+        <Box sx={{ flex: '1 1 400px' }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              最近更新的配置
+            </Typography>
+            {configurations.slice(0, 5).map((config) => (
+              <Box
+                key={config.id}
+                sx={{
+                  py: 1,
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  {config.display_name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {config.name} • {config.content_type.toUpperCase()}
+                </Typography>
+              </Box>
+            ))}
+          </Paper>
+        </Box>
+      </Box>
+    </Box>
+  );
+}

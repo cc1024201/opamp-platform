@@ -14,6 +14,12 @@ opamp:
   # Secret Key 验证 (为空则不验证)
   secret_key: ""
 
+jwt:
+  # JWT Secret Key (生产环境必须修改为强密钥)
+  secret_key: "your-secret-key-change-in-production"
+  # Token 有效期
+  duration: 24h
+
 database:
   # PostgreSQL 连接配置
   host: localhost

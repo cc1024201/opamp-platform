@@ -189,9 +189,16 @@ func (s *opampServer) updateAgentState(ctx context.Context, conn types.Connectio
 	// 检查配置状态
 	if message.RemoteConfigStatus != nil {
 		status := message.RemoteConfigStatus
+		configHash := string(status.LastRemoteConfigHash)
+
 		// Check if status indicates failure
 		if status.Status == protobufs.RemoteConfigStatuses_RemoteConfigStatuses_FAILED {
 			agent.Status = model.StatusError
+			// 更新应用历史记录为失败状态
+			s.updateApplyHistoryStatus(ctx, agentID, configHash, model.ApplyStatusFailed, status.ErrorMessage)
+		} else if status.Status == protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED {
+			// 配置应用成功
+			s.updateApplyHistoryStatus(ctx, agentID, configHash, model.ApplyStatusApplied, "")
 		}
 	}
 
@@ -207,6 +214,42 @@ func (s *opampServer) updateAgentState(ctx context.Context, conn types.Connectio
 	s.connections.addConnection(agentID, conn)
 
 	return nil
+}
+
+// updateApplyHistoryStatus 更新配置应用历史状态
+func (s *opampServer) updateApplyHistoryStatus(ctx context.Context, agentID, configHash string, status model.ApplyStatus, errorMsg string) {
+	// 查找最近的待应用或应用中的记录
+	histories, err := s.store.GetPendingApplyHistories(ctx)
+	if err != nil {
+		s.logger.Error("Failed to get pending apply histories",
+			zap.String("agent_id", agentID),
+			zap.Error(err),
+		)
+		return
+	}
+
+	// 查找匹配的记录
+	for _, history := range histories {
+		if history.AgentID == agentID && history.ConfigHash == configHash {
+			history.Status = status
+			if errorMsg != "" {
+				history.ErrorMessage = errorMsg
+			}
+			if status == model.ApplyStatusApplied {
+				now := time.Now()
+				history.AppliedAt = &now
+			}
+
+			if err := s.store.UpdateApplyHistory(ctx, history); err != nil {
+				s.logger.Error("Failed to update apply history",
+					zap.String("agent_id", agentID),
+					zap.Uint("history_id", history.ID),
+					zap.Error(err),
+				)
+			}
+			break
+		}
+	}
 }
 
 // checkAndSendConfig 检查并发送配置给 Agent

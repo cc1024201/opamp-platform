@@ -42,6 +42,10 @@ type AgentStore interface {
 	UpsertAgent(ctx context.Context, agent *model.Agent) error
 	// GetConfiguration 获取 Agent 的配置
 	GetConfiguration(ctx context.Context, agentID string) (*model.Configuration, error)
+	// GetPendingApplyHistories 获取所有待应用或应用中的配置记录
+	GetPendingApplyHistories(ctx context.Context) ([]*model.ConfigurationApplyHistory, error)
+	// UpdateApplyHistory 更新配置应用历史
+	UpdateApplyHistory(ctx context.Context, history *model.ConfigurationApplyHistory) error
 }
 
 type opampServer struct {

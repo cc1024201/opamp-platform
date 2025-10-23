@@ -18,6 +18,10 @@ type Configuration struct {
 	RawConfig   string `json:"raw_config" gorm:"type:text"`    // 原始配置内容 (YAML/JSON)
 	ConfigHash  string `json:"config_hash"` // 配置内容的 SHA256 哈希
 
+	// 版本管理
+	Version        int        `json:"version" gorm:"default:1"` // 配置版本号
+	LastAppliedAt  *time.Time `json:"last_applied_at,omitempty"` // 最后应用时间
+
 	// 选择器 (决定哪些 Agent 使用此配置)
 	Selector map[string]string `json:"selector" gorm:"serializer:json"` // 标签选择器
 

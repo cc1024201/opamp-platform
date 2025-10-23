@@ -62,9 +62,9 @@ func getEnvOrDefaultInt(key string, defaultValue int) int {
 }
 
 func cleanupDatabase(t *testing.T) {
-	testStore.db.Exec("TRUNCATE TABLE agents, configurations, sources, destinations, processors CASCADE")
+	testStore.db.Exec("TRUNCATE TABLE agents, configurations, sources, destinations, processors, users CASCADE")
 	t.Cleanup(func() {
-		testStore.db.Exec("TRUNCATE TABLE agents, configurations, sources, destinations, processors CASCADE")
+		testStore.db.Exec("TRUNCATE TABLE agents, configurations, sources, destinations, processors, users CASCADE")
 	})
 }
 

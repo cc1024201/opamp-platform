@@ -78,3 +78,20 @@ testdata/
 *.bak
 *.orig
 .DS_Store
+.backend.pid
+.frontend.pid
+
+# Build artifacts
+/backend/opamp-platform
+/backend/opamp-server
+/backend/docs/docs.go
+/backend/docs/swagger.json
+/backend/docs/swagger.yaml
+
+# Test files
+/tmp/
+*.test.log
+
+# Config (keep example files)
+config.yaml
+!config.yaml.example

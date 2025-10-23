@@ -11,6 +11,19 @@ import (
 
 // Agent handlers
 
+// listAgentsHandler 列出所有 Agent
+// @Summary      列出所有 Agent
+// @Description  获取所有 Agent 列表，支持分页
+// @Tags         agents
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        limit  query int false "每页数量" default(20)
+// @Param        offset query int false "偏移量" default(0)
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /agents [get]
 func listAgentsHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取分页参数
@@ -32,6 +45,19 @@ func listAgentsHandler(store *postgres.Store) gin.HandlerFunc {
 	}
 }
 
+// getAgentHandler 获取单个 Agent
+// @Summary      获取 Agent 详情
+// @Description  根据 ID 获取单个 Agent 的详细信息
+// @Tags         agents
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "Agent ID"
+// @Success      200 {object} model.Agent
+// @Failure      401 {object} map[string]string
+// @Failure      404 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /agents/{id} [get]
 func getAgentHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		agentID := c.Param("id")
@@ -51,6 +77,18 @@ func getAgentHandler(store *postgres.Store) gin.HandlerFunc {
 	}
 }
 
+// deleteAgentHandler 删除 Agent
+// @Summary      删除 Agent
+// @Description  根据 ID 删除指定的 Agent
+// @Tags         agents
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "Agent ID"
+// @Success      200 {object} map[string]string
+// @Failure      401 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /agents/{id} [delete]
 func deleteAgentHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		agentID := c.Param("id")
@@ -66,6 +104,17 @@ func deleteAgentHandler(store *postgres.Store) gin.HandlerFunc {
 
 // Configuration handlers
 
+// listConfigurationsHandler 列出所有配置
+// @Summary      列出所有配置
+// @Description  获取所有配置列表
+// @Tags         configurations
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /configurations [get]
 func listConfigurationsHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		configs, err := store.ListConfigurations(c.Request.Context())
@@ -81,6 +130,19 @@ func listConfigurationsHandler(store *postgres.Store) gin.HandlerFunc {
 	}
 }
 
+// getConfigurationHandler 获取单个配置
+// @Summary      获取配置详情
+// @Description  根据名称获取单个配置的详细信息
+// @Tags         configurations
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        name path string true "配置名称"
+// @Success      200 {object} model.Configuration
+// @Failure      401 {object} map[string]string
+// @Failure      404 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /configurations/{name} [get]
 func getConfigurationHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("name")
@@ -100,6 +162,19 @@ func getConfigurationHandler(store *postgres.Store) gin.HandlerFunc {
 	}
 }
 
+// createConfigurationHandler 创建配置
+// @Summary      创建新配置
+// @Description  创建一个新的配置
+// @Tags         configurations
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        configuration body model.Configuration true "配置信息"
+// @Success      201 {object} model.Configuration
+// @Failure      400 {object} map[string]string
+// @Failure      401 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /configurations [post]
 func createConfigurationHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var config model.Configuration
@@ -117,6 +192,20 @@ func createConfigurationHandler(store *postgres.Store) gin.HandlerFunc {
 	}
 }
 
+// updateConfigurationHandler 更新配置
+// @Summary      更新配置
+// @Description  更新指定名称的配置
+// @Tags         configurations
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        name path string true "配置名称"
+// @Param        configuration body model.Configuration true "配置信息"
+// @Success      200 {object} model.Configuration
+// @Failure      400 {object} map[string]string
+// @Failure      401 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /configurations/{name} [put]
 func updateConfigurationHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("name")
@@ -138,6 +227,18 @@ func updateConfigurationHandler(store *postgres.Store) gin.HandlerFunc {
 	}
 }
 
+// deleteConfigurationHandler 删除配置
+// @Summary      删除配置
+// @Description  根据名称删除指定的配置
+// @Tags         configurations
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        name path string true "配置名称"
+// @Success      200 {object} map[string]string
+// @Failure      401 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /configurations/{name} [delete]
 func deleteConfigurationHandler(store *postgres.Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("name")
