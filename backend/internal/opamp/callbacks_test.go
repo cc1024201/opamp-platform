@@ -135,8 +135,8 @@ func TestUpdateAgentState_NewAgent(t *testing.T) {
 	}
 
 	// Verify status
-	if agent.Status != model.StatusConnected {
-		t.Errorf("Status = %v, want %v", agent.Status, model.StatusConnected)
+	if agent.Status != model.StatusOnline {
+		t.Errorf("Status = %v, want %v", agent.Status, model.StatusOnline)
 	}
 
 	// Verify sequence number
@@ -170,7 +170,7 @@ func TestUpdateAgentState_ExistingAgent(t *testing.T) {
 		ID:       agentID,
 		Name:     "old-name",
 		Version:  "0.5.0",
-		Status:   model.StatusDisconnected,
+		Status:   model.StatusOffline,
 		Protocol: "opamp",
 		Labels:   model.Labels{"old-label": "old-value"},
 	}
@@ -230,8 +230,8 @@ func TestUpdateAgentState_ExistingAgent(t *testing.T) {
 	if agent.Version != "2.0.0" {
 		t.Errorf("Version = %v, want 2.0.0", agent.Version)
 	}
-	if agent.Status != model.StatusConnected {
-		t.Errorf("Status = %v, want %v", agent.Status, model.StatusConnected)
+	if agent.Status != model.StatusOnline {
+		t.Errorf("Status = %v, want %v", agent.Status, model.StatusOnline)
 	}
 	if agent.SequenceNumber != 5 {
 		t.Errorf("SequenceNumber = %v, want 5", agent.SequenceNumber)
@@ -434,7 +434,7 @@ func TestOnConnectionClose(t *testing.T) {
 	agent := &model.Agent{
 		ID:       agentID,
 		Name:     "test-agent",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Protocol: "opamp",
 		Labels:   make(model.Labels),
 	}
@@ -455,12 +455,12 @@ func TestOnConnectionClose(t *testing.T) {
 		t.Fatalf("GetAgent() failed: %v", err)
 	}
 
-	if updatedAgent.Status != model.StatusDisconnected {
-		t.Errorf("Status = %v, want %v", updatedAgent.Status, model.StatusDisconnected)
+	if updatedAgent.Status != model.StatusOffline {
+		t.Errorf("Status = %v, want %v", updatedAgent.Status, model.StatusOffline)
 	}
 
-	if updatedAgent.DisconnectedAt == nil {
-		t.Error("Expected DisconnectedAt to be set")
+	if updatedAgent.LastDisconnectedAt == nil {
+		t.Error("Expected LastDisconnectedAt to be set")
 	}
 }
 

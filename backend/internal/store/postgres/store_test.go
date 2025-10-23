@@ -78,7 +78,7 @@ func TestStore_UpsertAgent(t *testing.T) {
 		Type:     "otel-collector",
 		Hostname: "test-host-001",
 		Version:  "1.0.0",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Labels: model.Labels{
 			"env":    "test",
 			"region": "us-west",
@@ -141,7 +141,7 @@ func TestStore_GetAgent(t *testing.T) {
 		ID:       "test-newAgent-002",
 		Name:     "test-collector-2",
 		Hostname: "test-host-002",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Labels: model.Labels{
 			"os.type": "linux",
 		},
@@ -171,7 +171,7 @@ func TestStore_ListAgents(t *testing.T) {
 			ID:       fmt.Sprintf("list-agent-%03d", i),
 			Name:     fmt.Sprintf("collector-%d", i),
 			Hostname: fmt.Sprintf("host-%03d", i),
-			Status:   model.StatusConnected,
+			Status:   model.StatusOnline,
 			Protocol: "opamp",
 		}
 		if err := testStore.UpsertAgent(ctx, agent); err != nil {
@@ -209,7 +209,7 @@ func TestStore_DeleteAgent(t *testing.T) {
 		ID:       "test-agent-del",
 		Name:     "delete-test",
 		Hostname: "test-host",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Protocol: "opamp",
 	}
 
@@ -309,7 +309,7 @@ func TestStore_GetConfiguration(t *testing.T) {
 		ID:       "config-test-agent",
 		Name:     "test-collector",
 		Hostname: "test-host",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Labels: model.Labels{
 			"os.type": "linux",
 		},

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opamp-go/server"
@@ -46,15 +47,27 @@ type AgentStore interface {
 	GetPendingApplyHistories(ctx context.Context) ([]*model.ConfigurationApplyHistory, error)
 	// UpdateApplyHistory 更新配置应用历史
 	UpdateApplyHistory(ctx context.Context, history *model.ConfigurationApplyHistory) error
+
+	// Agent 状态管理
+	UpdateAgentStatus(ctx context.Context, agentID string, status model.AgentStatus) error
+	UpdateAgentLastSeen(ctx context.Context, agentID string) error
+	SetAgentDisconnectReason(ctx context.Context, agentID string, reason string) error
+	ListStaleAgents(ctx context.Context, timeout time.Duration) ([]*model.Agent, error)
+
+	// 连接历史管理
+	CreateConnectionHistory(ctx context.Context, history *model.AgentConnectionHistory) error
+	UpdateConnectionHistory(ctx context.Context, history *model.AgentConnectionHistory) error
+	GetActiveConnectionHistory(ctx context.Context, agentID string) (*model.AgentConnectionHistory, error)
 }
 
 type opampServer struct {
-	config      Config
-	logger      *zap.Logger
-	server      server.OpAMPServer
-	handler     server.HTTPHandlerFunc
-	store       AgentStore
-	connections *connectionManager
+	config           Config
+	logger           *zap.Logger
+	server           server.OpAMPServer
+	handler          server.HTTPHandlerFunc
+	store            AgentStore
+	connections      *connectionManager
+	heartbeatMonitor *HeartbeatMonitor
 }
 
 // NewServer 创建新的 OpAMP 服务器
@@ -69,6 +82,14 @@ func NewServer(config Config, store AgentStore, logger *zap.Logger) (Server, err
 		store:       store,
 		connections: newConnectionManager(),
 	}
+
+	// 创建心跳监控器
+	s.heartbeatMonitor = NewHeartbeatMonitor(
+		store,
+		logger,
+		30*time.Second, // 每 30 秒检查一次
+		60*time.Second, // 60 秒超时
+	)
 
 	// 创建 opamp-go 服务器
 	opampServer := server.New(newLoggerAdapter(logger))
@@ -91,11 +112,19 @@ func NewServer(config Config, store AgentStore, logger *zap.Logger) (Server, err
 
 func (s *opampServer) Start(ctx context.Context) error {
 	s.logger.Info("OpAMP server started", zap.String("endpoint", s.config.Endpoint))
+
+	// 启动心跳监控
+	s.heartbeatMonitor.Start(ctx)
+
 	return nil
 }
 
 func (s *opampServer) Stop(ctx context.Context) error {
 	s.logger.Info("OpAMP server stopping")
+
+	// 停止心跳监控
+	s.heartbeatMonitor.Stop()
+
 	return s.server.Stop(ctx)
 }
 

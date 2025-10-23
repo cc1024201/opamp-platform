@@ -113,9 +113,9 @@ func TestAgent_Status(t *testing.T) {
 		status AgentStatus
 		want   string
 	}{
-		{"Disconnected", StatusDisconnected, "Disconnected"},
-		{"Connected", StatusConnected, "Connected"},
-		{"Configuring", StatusConfiguring, "Configuring"},
+		{"Disconnected", StatusOffline, "Disconnected"},
+		{"Connected", StatusOnline, "Connected"},
+		{"Configuring", StatusOnline, "Configuring"},
 		{"Error", StatusError, "Error"},
 	}
 
@@ -141,7 +141,7 @@ func TestAgent_Creation(t *testing.T) {
 		Architecture: "amd64",
 		Hostname:     "test-host",
 		Version:      "1.0.0",
-		Status:       StatusConnected,
+		Status:       StatusOnline,
 		ConnectedAt:  &now,
 		Labels: Labels{
 			"env":    "test",
@@ -158,8 +158,8 @@ func TestAgent_Creation(t *testing.T) {
 	if agent.Name != "test-collector" {
 		t.Errorf("Agent.Name = %v, want %v", agent.Name, "test-collector")
 	}
-	if agent.Status != StatusConnected {
-		t.Errorf("Agent.Status = %v, want %v", agent.Status, StatusConnected)
+	if agent.Status != StatusOnline {
+		t.Errorf("Agent.Status = %v, want %v", agent.Status, StatusOnline)
 	}
 	if agent.ConnectedAt == nil {
 		t.Error("Agent.ConnectedAt should not be nil")

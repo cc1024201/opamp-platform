@@ -23,14 +23,14 @@ func TestListAgentsHandler(t *testing.T) {
 	agent1 := &model.Agent{
 		ID:       uuid.New().String(),
 		Name:     "test-agent-1",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Version:  "1.0.0",
 		Hostname: "host1",
 	}
 	agent2 := &model.Agent{
 		ID:       uuid.New().String(),
 		Name:     "test-agent-2",
-		Status:   model.StatusDisconnected,
+		Status:   model.StatusOffline,
 		Version:  "1.0.1",
 		Hostname: "host2",
 	}
@@ -102,7 +102,7 @@ func TestGetAgentHandler(t *testing.T) {
 	agent := &model.Agent{
 		ID:       agentID,
 		Name:     "test-agent-get",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Version:  "1.0.0",
 		Hostname: "test-host",
 	}
@@ -165,7 +165,7 @@ func TestDeleteAgentHandler(t *testing.T) {
 	agent := &model.Agent{
 		ID:       agentID,
 		Name:     "test-agent-delete",
-		Status:   model.StatusConnected,
+		Status:   model.StatusOnline,
 		Version:  "1.0.0",
 		Hostname: "test-host",
 	}

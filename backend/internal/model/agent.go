@@ -5,28 +5,26 @@ import (
 )
 
 // AgentStatus 表示 Agent 的连接状态
-type AgentStatus int
+type AgentStatus string
 
 const (
-	StatusDisconnected AgentStatus = iota // 已断开
-	StatusConnected                       // 已连接
-	StatusConfiguring                     // 配置中
-	StatusError                           // 错误状态
+	StatusOnline  AgentStatus = "online"  // 在线
+	StatusOffline AgentStatus = "offline" // 离线
+	StatusError   AgentStatus = "error"   // 错误状态
 )
 
 // String 返回状态的字符串表示
 func (s AgentStatus) String() string {
+	return string(s)
+}
+
+// IsValid 检查状态是否有效
+func (s AgentStatus) IsValid() bool {
 	switch s {
-	case StatusDisconnected:
-		return "Disconnected"
-	case StatusConnected:
-		return "Connected"
-	case StatusConfiguring:
-		return "Configuring"
-	case StatusError:
-		return "Error"
+	case StatusOnline, StatusOffline, StatusError:
+		return true
 	default:
-		return "Unknown"
+		return false
 	}
 }
 
@@ -41,9 +39,15 @@ type Agent struct {
 	Version      string    `json:"version"` // Agent 版本
 
 	// 连接状态
-	Status         AgentStatus `json:"status" gorm:"index"`
-	ConnectedAt    *time.Time  `json:"connected_at,omitempty"`
-	DisconnectedAt *time.Time  `json:"disconnected_at,omitempty"`
+	Status              AgentStatus `json:"status" gorm:"type:varchar(20);default:offline;index"`
+	LastSeenAt          *time.Time  `json:"last_seen_at,omitempty" gorm:"index"`
+	LastConnectedAt     *time.Time  `json:"last_connected_at,omitempty"`
+	LastDisconnectedAt  *time.Time  `json:"last_disconnected_at,omitempty"`
+	DisconnectReason    string      `json:"disconnect_reason,omitempty"`
+
+	// 兼容性字段 (将来可以移除)
+	ConnectedAt    *time.Time  `json:"connected_at,omitempty" gorm:"-"`
+	DisconnectedAt *time.Time  `json:"disconnected_at,omitempty" gorm:"-"`
 
 	// 标签 (用于配置匹配)
 	Labels Labels `json:"labels" gorm:"serializer:json"`

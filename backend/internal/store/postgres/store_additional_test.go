@@ -69,7 +69,7 @@ func TestStore_ListAgents_Pagination(t *testing.T) {
 			ID:       fmt.Sprintf("page-agent-%03d", i),
 			Name:     fmt.Sprintf("agent-%d", i),
 			Hostname: fmt.Sprintf("host-%d", i),
-			Status:   model.StatusConnected,
+			Status:   model.StatusOnline,
 			Protocol: "opamp",
 		}
 		err := testStore.UpsertAgent(ctx, agent)
@@ -158,7 +158,7 @@ func TestStore_GetConfiguration_EdgeCases(t *testing.T) {
 			ID:                "specific-agent",
 			Name:              "test-agent",
 			Hostname:          "test-host",
-			Status:            model.StatusConnected,
+			Status:            model.StatusOnline,
 			Protocol:          "opamp",
 			ConfigurationName: "specific-config",
 		}
@@ -178,7 +178,7 @@ func TestStore_GetConfiguration_EdgeCases(t *testing.T) {
 			ID:                "missing-config-agent",
 			Name:              "test-agent",
 			Hostname:          "test-host",
-			Status:            model.StatusConnected,
+			Status:            model.StatusOnline,
 			Protocol:          "opamp",
 			ConfigurationName: "non-existent-config",
 		}
@@ -197,7 +197,7 @@ func TestStore_GetConfiguration_EdgeCases(t *testing.T) {
 			ID:       "no-match-agent",
 			Name:     "test-agent",
 			Hostname: "test-host",
-			Status:   model.StatusConnected,
+			Status:   model.StatusOnline,
 			Protocol: "opamp",
 			Labels: model.Labels{
 				"env": "nonexistent",
@@ -245,7 +245,7 @@ func TestStore_GetConfiguration_EdgeCases(t *testing.T) {
 			ID:       "multi-match-agent",
 			Name:     "test-agent",
 			Hostname: "test-host",
-			Status:   model.StatusConnected,
+			Status:   model.StatusOnline,
 			Protocol: "opamp",
 			Labels: model.Labels{
 				"tier": "production",
@@ -392,7 +392,7 @@ func TestStore_ConcurrentAccess(t *testing.T) {
 				ID:       fmt.Sprintf("concurrent-agent-%03d", id),
 				Name:     fmt.Sprintf("agent-%d", id),
 				Hostname: fmt.Sprintf("host-%d", id),
-				Status:   model.StatusConnected,
+				Status:   model.StatusOnline,
 				Protocol: "opamp",
 			}
 			err := testStore.UpsertAgent(ctx, agent)

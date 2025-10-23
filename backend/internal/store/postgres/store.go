@@ -75,6 +75,7 @@ func (s *Store) migrate() error {
 		&model.Package{},
 		&model.ConfigurationHistory{},
 		&model.ConfigurationApplyHistory{},
+		&model.AgentConnectionHistory{},
 	)
 }
 

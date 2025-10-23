@@ -109,6 +109,71 @@ func (m *mockAgentStore) GetConfiguration(ctx context.Context, agentID string) (
 	return m.configurations[agentID], nil
 }
 
+func (m *mockAgentStore) GetPendingApplyHistories(ctx context.Context) ([]*model.ConfigurationApplyHistory, error) {
+	// Mock implementation - returns empty slice
+	return []*model.ConfigurationApplyHistory{}, nil
+}
+
+func (m *mockAgentStore) UpdateApplyHistory(ctx context.Context, history *model.ConfigurationApplyHistory) error {
+	// Mock implementation - does nothing
+	return nil
+}
+
+// Agent 状态管理方法
+func (m *mockAgentStore) UpdateAgentStatus(ctx context.Context, agentID string, status model.AgentStatus) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if agent, exists := m.agents[agentID]; exists {
+		agent.Status = status
+		now := time.Now()
+		if status == model.StatusOnline {
+			agent.LastConnectedAt = &now
+		} else if status == model.StatusOffline {
+			agent.LastDisconnectedAt = &now
+		}
+	}
+	return nil
+}
+
+func (m *mockAgentStore) UpdateAgentLastSeen(ctx context.Context, agentID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if agent, exists := m.agents[agentID]; exists {
+		now := time.Now()
+		agent.LastSeenAt = &now
+	}
+	return nil
+}
+
+func (m *mockAgentStore) SetAgentDisconnectReason(ctx context.Context, agentID string, reason string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if agent, exists := m.agents[agentID]; exists {
+		agent.DisconnectReason = reason
+	}
+	return nil
+}
+
+func (m *mockAgentStore) ListStaleAgents(ctx context.Context, timeout time.Duration) ([]*model.Agent, error) {
+	return []*model.Agent{}, nil
+}
+
+// 连接历史管理方法
+func (m *mockAgentStore) CreateConnectionHistory(ctx context.Context, history *model.AgentConnectionHistory) error {
+	return nil
+}
+
+func (m *mockAgentStore) UpdateConnectionHistory(ctx context.Context, history *model.AgentConnectionHistory) error {
+	return nil
+}
+
+func (m *mockAgentStore) GetActiveConnectionHistory(ctx context.Context, agentID string) (*model.AgentConnectionHistory, error) {
+	return nil, nil
+}
+
 func TestNewServer(t *testing.T) {
 	logger := zap.NewNop()
 	store := newMockAgentStore()

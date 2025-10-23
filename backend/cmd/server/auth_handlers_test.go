@@ -167,84 +167,83 @@ func TestLoginHandler(t *testing.T) {
 func TestRegisterHandler(t *testing.T) {
 	store := setupTestStore(t)
 	jwtManager := auth.NewJWTManager("test-secret-key", 24*time.Hour)
+	router := setupTestRouter()
+	router.POST("/register", registerHandler(store, jwtManager))
 
-	tests := []struct {
-		name           string
-		requestBody    interface{}
-		expectedStatus int
-		checkResponse  func(*testing.T, *httptest.ResponseRecorder)
-	}{
-		{
-			name: "成功注册",
-			requestBody: model.RegisterRequest{
-				Username: "testuser2",
-				Email:    "test2@example.com",
-				Password: "password123",
-			},
-			expectedStatus: http.StatusCreated,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				var response model.LoginResponse
-				err := json.Unmarshal(w.Body.Bytes(), &response)
-				require.NoError(t, err)
-				assert.NotEmpty(t, response.Token)
-				assert.Equal(t, "testuser2", response.User.Username)
-				assert.Equal(t, "test2@example.com", response.User.Email)
-			},
-		},
-		{
-			name: "用户名已存在",
-			requestBody: model.RegisterRequest{
-				Username: "testuser2", // 使用上面创建的用户名
-				Email:    "another@example.com",
-				Password: "password123",
-			},
-			expectedStatus: http.StatusConflict,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Contains(t, w.Body.String(), "already exists")
-			},
-		},
-		{
-			name: "邮箱已存在",
-			requestBody: model.RegisterRequest{
-				Username: "testuser3",
-				Email:    "test2@example.com", // 使用已存在的邮箱
-				Password: "password123",
-			},
-			expectedStatus: http.StatusConflict,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Contains(t, w.Body.String(), "already exists")
-			},
-		},
-		{
-			name: "无效的请求体",
-			requestBody: map[string]string{
-				"username": "test",
-			},
-			expectedStatus: http.StatusBadRequest,
-			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
-				assert.Contains(t, w.Body.String(), "error")
-			},
-		},
-	}
+	// 测试成功注册 - 必须先执行以创建基准用户
+	t.Run("成功注册", func(t *testing.T) {
+		reqBody := model.RegisterRequest{
+			Username: "testuser2",
+			Email:    "test2@example.com",
+			Password: "password123",
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			router := setupTestRouter()
-			router.POST("/register", registerHandler(store, jwtManager))
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-			body, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
-			req.Header.Set("Content-Type", "application/json")
+		assert.Equal(t, http.StatusCreated, w.Code)
+		var response model.LoginResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.NotEmpty(t, response.Token)
+		assert.Equal(t, "testuser2", response.User.Username)
+		assert.Equal(t, "test2@example.com", response.User.Email)
+	})
 
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
+	// 测试用户名已存在
+	t.Run("用户名已存在", func(t *testing.T) {
+		reqBody := model.RegisterRequest{
+			Username: "testuser2", // 使用上面创建的用户名
+			Email:    "another@example.com",
+			Password: "password123",
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
-			if tt.checkResponse != nil {
-				tt.checkResponse(t, w)
-			}
-		})
-	}
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "already exists")
+	})
+
+	// 测试邮箱已存在
+	t.Run("邮箱已存在", func(t *testing.T) {
+		reqBody := model.RegisterRequest{
+			Username: "testuser3",
+			Email:    "test2@example.com", // 使用已存在的邮箱
+			Password: "password123",
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "already exists")
+	})
+
+	// 测试无效的请求体
+	t.Run("无效的请求体", func(t *testing.T) {
+		reqBody := map[string]string{
+			"username": "test",
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "error")
+	})
 }
 
 func TestMeHandler(t *testing.T) {
