@@ -15,18 +15,23 @@ import (
 
 // Manager 包管理器
 type Manager struct {
-	store   *postgres.Store
-	storage *storage.MinIOClient
+	store   PackageStore
+	storage FileStorage
 	logger  *zap.Logger
 }
 
 // NewManager 创建包管理器
-func NewManager(store *postgres.Store, storage *storage.MinIOClient, logger *zap.Logger) *Manager {
+func NewManager(store PackageStore, storage FileStorage, logger *zap.Logger) *Manager {
 	return &Manager{
 		store:   store,
 		storage: storage,
 		logger:  logger,
 	}
+}
+
+// NewManagerWithConcreteTypes 使用具体类型创建包管理器(保持向后兼容)
+func NewManagerWithConcreteTypes(store *postgres.Store, storage *storage.MinIOClient, logger *zap.Logger) *Manager {
+	return NewManager(store, storage, logger)
 }
 
 // UploadPackage 上传软件包

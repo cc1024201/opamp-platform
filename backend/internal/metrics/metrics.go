@@ -20,6 +20,16 @@ type Metrics struct {
 	AgentConnectTotal    prometheus.Counter
 	AgentDisconnectTotal prometheus.Counter
 
+	// Agent 状态指标 (按状态分类)
+	AgentsByStatus       *prometheus.GaugeVec
+	AgentStatusChanges   *prometheus.CounterVec
+	AgentHeartbeats      prometheus.Counter
+	AgentStaleCount      prometheus.Gauge
+	AgentLastSeenSeconds *prometheus.GaugeVec
+
+	// Agent 连接时长指标
+	AgentConnectionDuration *prometheus.HistogramVec
+
 	// Configuration 指标
 	ConfigurationsTotal      prometheus.Gauge
 	ConfigurationChangesTotal prometheus.Counter
@@ -107,6 +117,55 @@ func NewMetrics(namespace string) *Metrics {
 				Name:      "agent_disconnect_total",
 				Help:      "Total number of agent disconnections",
 			},
+		),
+
+		// Agent 状态指标
+		AgentsByStatus: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "agents_by_status",
+				Help:      "Number of agents grouped by status",
+			},
+			[]string{"status"},
+		),
+		AgentStatusChanges: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "agent_status_changes_total",
+				Help:      "Total number of agent status changes",
+			},
+			[]string{"from", "to"},
+		),
+		AgentHeartbeats: promauto.NewCounter(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "agent_heartbeats_total",
+				Help:      "Total number of agent heartbeats received",
+			},
+		),
+		AgentStaleCount: promauto.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "agents_stale",
+				Help:      "Number of agents with stale heartbeats",
+			},
+		),
+		AgentLastSeenSeconds: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "agent_last_seen_seconds",
+				Help:      "Seconds since agent was last seen (by agent_id)",
+			},
+			[]string{"agent_id"},
+		),
+		AgentConnectionDuration: promauto.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Namespace: namespace,
+				Name:      "agent_connection_duration_seconds",
+				Help:      "Agent connection duration in seconds",
+				Buckets:   []float64{60, 300, 600, 1800, 3600, 7200, 14400, 28800, 86400}, // 1m, 5m, 10m, 30m, 1h, 2h, 4h, 8h, 24h
+			},
+			[]string{"agent_id"},
 		),
 
 		// Configuration 指标

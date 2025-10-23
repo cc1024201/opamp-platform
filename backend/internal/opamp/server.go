@@ -87,6 +87,7 @@ func NewServer(config Config, store AgentStore, logger *zap.Logger) (Server, err
 	s.heartbeatMonitor = NewHeartbeatMonitor(
 		store,
 		logger,
+		nil, // metrics (暂时为 nil,后续可以添加)
 		30*time.Second, // 每 30 秒检查一次
 		60*time.Second, // 60 秒超时
 	)

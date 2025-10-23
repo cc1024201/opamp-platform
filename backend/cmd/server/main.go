@@ -166,10 +166,20 @@ func main() {
 			// Agent 相关 API
 			agents := authenticated.Group("/agents")
 			{
+				// 状态统计和分组查询(放在前面,避免被 :id 路由捕获)
+				agents.GET("/online", listOnlineAgentsHandler(store))
+				agents.GET("/offline", listOfflineAgentsHandler(store))
+				agents.GET("/status/summary", getAgentStatusSummaryHandler(store))
+
+				// Agent CRUD
 				agents.GET("", listAgentsHandler(store))
 				agents.GET("/:id", getAgentHandler(store))
 				agents.DELETE("/:id", deleteAgentHandler(store))
+
+				// Agent 状态和历史
 				agents.GET("/:id/apply-history", getAgentApplyHistoryHandler(store))
+				agents.GET("/:id/connection-history", getAgentConnectionHistoryHandler(store))
+				agents.GET("/:id/active-connection", getAgentActiveConnectionHandler(store))
 			}
 
 			// Configuration 相关 API

@@ -7,6 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/cc1024201/opamp-platform/internal/metrics"
 	"github.com/cc1024201/opamp-platform/internal/model"
 )
 
@@ -14,6 +15,7 @@ import (
 type HeartbeatMonitor struct {
 	store         AgentStore
 	logger        *zap.Logger
+	metrics       *metrics.Metrics
 	checkInterval time.Duration
 	timeout       time.Duration
 	stopCh        chan struct{}
@@ -21,7 +23,7 @@ type HeartbeatMonitor struct {
 }
 
 // NewHeartbeatMonitor 创建新的心跳监控器
-func NewHeartbeatMonitor(store AgentStore, logger *zap.Logger, checkInterval, timeout time.Duration) *HeartbeatMonitor {
+func NewHeartbeatMonitor(store AgentStore, logger *zap.Logger, m *metrics.Metrics, checkInterval, timeout time.Duration) *HeartbeatMonitor {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
@@ -37,6 +39,7 @@ func NewHeartbeatMonitor(store AgentStore, logger *zap.Logger, checkInterval, ti
 	return &HeartbeatMonitor{
 		store:         store,
 		logger:        logger,
+		metrics:       m,
 		checkInterval: checkInterval,
 		timeout:       timeout,
 		stopCh:        make(chan struct{}),
@@ -88,6 +91,11 @@ func (m *HeartbeatMonitor) checkHeartbeats(ctx context.Context) {
 		return
 	}
 
+	// 更新 metrics: 陈旧 Agent 数量
+	if m.metrics != nil {
+		m.metrics.AgentStaleCount.Set(float64(len(staleAgents)))
+	}
+
 	if len(staleAgents) == 0 {
 		return
 	}
@@ -116,6 +124,13 @@ func (m *HeartbeatMonitor) handleHeartbeatTimeout(ctx context.Context, agent *mo
 		return err
 	}
 
+	// 更新 metrics: 状态变更
+	if m.metrics != nil {
+		m.metrics.AgentStatusChanges.WithLabelValues(string(model.StatusOnline), string(model.StatusOffline)).Inc()
+		m.metrics.AgentsByStatus.WithLabelValues(string(model.StatusOffline)).Inc()
+		m.metrics.AgentsByStatus.WithLabelValues(string(model.StatusOnline)).Dec()
+	}
+
 	// 设置断开原因
 	reason := "heartbeat timeout"
 	if err := m.store.SetAgentDisconnectReason(ctx, agent.ID, reason); err != nil {
@@ -141,6 +156,12 @@ func (m *HeartbeatMonitor) handleHeartbeatTimeout(ctx context.Context, agent *mo
 			m.logger.Error("failed to update connection history",
 				zap.String("agent_id", agent.ID),
 				zap.Error(err))
+		}
+
+		// 更新 metrics: 记录连接时长
+		if m.metrics != nil && !activeHistory.ConnectedAt.IsZero() {
+			duration := now.Sub(activeHistory.ConnectedAt).Seconds()
+			m.metrics.AgentConnectionDuration.WithLabelValues(agent.ID).Observe(duration)
 		}
 	}
 

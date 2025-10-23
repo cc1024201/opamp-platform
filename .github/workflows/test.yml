@@ -33,7 +33,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
         cache: true
         cache-dependency-path: backend/go.sum
 
@@ -81,7 +81,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
         cache: true
         cache-dependency-path: backend/go.sum
 
@@ -104,9 +104,16 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.23'
         cache: true
         cache-dependency-path: backend/go.sum
+
+    - name: Install swag
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Generate Swagger docs
+      working-directory: ./backend
+      run: ~/go/bin/swag init -g cmd/server/main.go -o docs
 
     - name: Build
       working-directory: ./backend
